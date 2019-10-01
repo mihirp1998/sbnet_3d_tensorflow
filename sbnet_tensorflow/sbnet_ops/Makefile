@@ -14,12 +14,12 @@ test:
 	cd ../benchmark && bash run_all_unittests.bash # unit tests
 	cd tests && python test_sparse_blocks.py # integration tests
 
-CUDA_INC = /usr/local/cuda/include
+CUDA_INC = /usr/local/cuda-9.0/include
 LOCAL_INC = /usr/local # needed for build to work with TF 1.8 since it's looking at cuda/include
-CUDA_LIB = /usr/local/cuda/lib64
+CUDA_LIB = /usr/local/cuda-9.0/lib64
 TF_INC   = $(shell python -c "import tensorflow; print(tensorflow.sysconfig.get_include())")
 TF_LIB   = $(shell python -c "import tensorflow as tf; print(tf.sysconfig.get_lib())")
-GCC5     = $(shell g++ --version | grep 5.4 | wc -l)
+GCC5     = $(shell g++ --version | grep 5.5 | wc -l)
 ifeq ($(GCC5), 1)
 ABI      =-D_GLIBCXX_USE_CXX11_ABI=0
 else

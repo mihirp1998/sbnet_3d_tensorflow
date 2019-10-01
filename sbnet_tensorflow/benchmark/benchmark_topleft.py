@@ -33,6 +33,12 @@ import os
 import tensorflow as tf
 import time
 
+from tensorflow import ConfigProto
+from tensorflow import InteractiveSession
+
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+
 from argparse import ArgumentParser
 from collections import namedtuple
 
@@ -84,7 +90,7 @@ def main():
             is_sparse=False,
             tol=None,
             avgpool=None)
-        with tf.Graph().as_default(), tf.Session() as sess:
+        with tf.Graph().as_default(), tf.Session(config=config) as sess:
             test_result = run_one(sess, None, test_config, res_block=res_block)
         dense_time = test_result.avg_time
 
@@ -110,7 +116,7 @@ def main():
                     is_sparse=True,
                     tol=TOL,
                     avgpool=AVGPOOL)
-                with tf.Graph().as_default(), tf.Session() as sess:
+                with tf.Graph().as_default(), tf.Session(config=config) as sess:
                     test_result = run_one(sess, mask, test_config, res_block=res_block)
                 speedup = dense_time / test_result.avg_time
                 if speedup > best_speedup:
