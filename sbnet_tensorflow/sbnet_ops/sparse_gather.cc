@@ -67,6 +67,7 @@ template <typename T> struct SparseGatherFunctor<CPUDevice, T> {
         const int R = bSzH, S = bSzW;
         #pragma omp parallel for
         for (int ib = 0; ib < numActive; ib++) {
+            // this is because we have flattened it
             int biN = activeBlockIndices[ib*3+0];
             int biH = activeBlockIndices[ib*3+1];
             int biW = activeBlockIndices[ib*3+2];
@@ -189,10 +190,11 @@ public:
 
         const Tensor& bin_counts_tensor = context->input(1);
         // read the number of active blocks from bin_counts input that is expected to be always in host mem
+        //  stores the number of active index starting points
         int32 bin0Count = bin_counts_tensor.flat<int32>().data()[0];
-
         // Initializes output.
         // TODO: try to find a way not to redo the allocation in Compute
+
         Tensor* y = NULL;
         int yShapeArr[] = { bin0Count, bSzH, bSzW, C };
         if (transpose_)

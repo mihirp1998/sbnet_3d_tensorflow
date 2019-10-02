@@ -129,7 +129,13 @@ public:
         const Tensor& bstride_dynamic = context->input(3);
         const Tensor& boffset_dynamic = context->input(4);
 
+        // list to check
         const Tensor* toCheck[] = {&bcount_dynamic, &bsize_dynamic, &bstride_dynamic, &boffset_dynamic};
+        // make sures that toCheck each tensor has one dimenation and 
+        // the number of elements in the tensor are always 2 (which represents H and W)
+        
+        // TODO: ADD 3 DIMENSION CHECK FOR each
+        
         for (auto tc: toCheck) {
             int bNumDims = tc->dims();
             int dim0 = tc->dim_size(0);
@@ -141,6 +147,9 @@ public:
         int N = mask.dim_size(0);
         int H = mask.dim_size(1);
         int W = mask.dim_size(2);
+
+        // unpack each tensor and get H and W specific things
+        // TODO: ADD THE SAME THING FOR DEPTH
 
         int bCntH = bcount_dynamic.flat<int32>().data()[0];
         int bCntW = bcount_dynamic.flat<int32>().data()[1];
@@ -156,23 +165,46 @@ public:
 
         // Initializes output.
         // TODO: try to find a way not to redo the allocation in Compute
+
+        // this is the tensor which we care about
         Tensor* activeBlockIndices = NULL;
         TensorShape activeBlockShape;
+
+        // takes the block count and just multiples to find the total number of indices
+        //TODO : ADD DEPTH FOR INDICES,, COZ MAX INDICES WILL  BE RELATED TO DEPTH
         int maxIndices = N * bCntH * bCntW;
+
+        // a list which contains indices
+
         int activeBlockShapeArr[] = { maxIndices, 3 };
         TensorShapeUtils::MakeShape(activeBlockShapeArr, 2, &activeBlockShape);
-        // output type is known from REGISTER_OP macro
+
+        // creates activeBlockShape which is a tensorshape object which is decided by activeBlockShapeArr
+        // and the number of dimensions are 2
+
+        // output type is known from REGISTER_OP macro'
+        
+        // this creates an output tensor which is activeBlockIndices
+        // the shape for this is coming from activeBlockShape
+        
         OP_REQUIRES_OK(context, context->allocate_output(0, activeBlockShape, &activeBlockIndices));
 
+        // numBins reprsents the number of dimensions
+
         unsigned int numBins = 1;
+
+        // ideally one bin should have all the indices
+        
         unsigned int binSize = (maxIndices + numBins - 1) / numBins;
         TensorShape binCountsShape;
         int binCountsShapeArr[] = { (int)numBins };
         TensorShapeUtils::MakeShape(binCountsShapeArr, 1, &binCountsShape);
         Tensor binCounts;
+        // makes a bincounts tensor with shape of [1]
         OP_REQUIRES_OK(context, context->allocate_temp(DT_INT32, binCountsShape, &binCounts));
 
         // Does the computation.
+        // calls the c++ defined function
         ReduceMaskFunctor<Device, T>()(
             context->eigen_device<Device>(),          // Device.
             mask.flat<T>().data(),                    // Mask array.
@@ -197,6 +229,7 @@ public:
 
         Tensor* resultOut = nullptr;
         AllocatorAttributes hostAttr; hostAttr.set_on_host(true);
+        // maybe this sets the device and calls it
         OP_REQUIRES_OK(context, context->allocate_output(1, binCountsShape, &resultOut, hostAttr));
 
         // read the resulting block count back from GPU to CPU mem
